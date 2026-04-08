@@ -4,7 +4,6 @@ Módulo de Python que contiene las rutas
 from flask import current_app as app, render_template, redirect, url_for, abort, request
 from .formularios import GenerarQuizForm
 from . import mongo
-from .trivia import generar_n_preguntas_aleatoriamente
 from .render_utils import render_pagination
 
 @app.route("/")
@@ -50,6 +49,7 @@ def mostrar_festival(anyo: int):
 @app.route('/jugar')
 def jugar_quiz():
     # Jugar a un quiz. Esta funcion NO la teneis que modificar
+    from .trivia import generar_n_preguntas_aleatoriamente
 
     # (salvo probar diferentes num_preguntas si quereis un quiz mas largo).
     # Hay dos opciones: si no venimos de 'generar_quiz',

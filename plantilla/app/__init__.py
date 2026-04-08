@@ -29,5 +29,5 @@ def create_app() -> Flask:
 
     # Vinculamos las rutas del modulo "rutas"
     with app.app_context():
-        pass
+        from . import rutas
     return app

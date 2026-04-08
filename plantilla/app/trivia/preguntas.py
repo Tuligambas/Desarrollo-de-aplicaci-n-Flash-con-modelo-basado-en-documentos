@@ -68,8 +68,30 @@ class PrimerAnyoParticipacion(Trivia):
     """
 
     def __init__(self, parametros: OperacionesEurovision):
-        self._opciones_invalidas = None
-        self._respuesta = None
+        #busco utilizando las funciones auxiliares un pais aleatorio sobre el que hacer la pregunta
+        self.pais = parametros.paises_participantes_aleatorios(1)[0]
+
+        #cojo el año de participacion del pais
+        #parecido a numero_peliculas_por_categorias!!!!
+        agregacion = list(parametros.agregacion([
+            {"$unwind": "$concursantes"},
+            {"$match": {"concursantes.pais": self.pais}},
+            {"$group": {
+                "_id": "$concursantes.pais",
+                "primer_anyo": {
+                    "$min": "$anyo"}}}
+        ]))
+        self._respuesta = agregacion[0]["primer_anyo"]
+
+        opciones = parametros.anyo_aleatorio(50)
+        opciones_invalidas = []
+        for anyo in opciones:
+            if anyo != self._respuesta and anyo not in opciones_invalidas:
+                opciones_invalidas.append(anyo)
+            if len(opciones_invalidas) == 3:
+                break
+
+        self._opciones_invalidas = opciones_invalidas
 
     @property
     def pregunta(self) -> str:
@@ -98,9 +120,20 @@ class CancionPais(Trivia):
 
     def __init__(self, parametros: OperacionesEurovision):
         # Obtenemos una participacion para la respuesta
-        self._respuesta = None
-        self._cancion = None
-        self._opciones_invalidas = None
+        participacion_aleatoria = parametros.paises_participantes_aleatorios(1)[0]
+        self._respuesta = participacion_aleatoria["pais"]
+        self._cancion = participacion_aleatoria["cancion"]
+
+        #saco posibles paises y aplico la misma logica que antes
+        opciones = parametros.paises_participantes_aleatorios(50)
+        opciones_invalidas = []
+        for pais in opciones:
+            if pais != self._respuesta and pais not in opciones_invalidas:
+                opciones_invalidas.append(pais)
+            if len(opciones_invalidas) == 3:
+                break
+
+        self._opciones_invalidas = opciones_invalidas
 
     @property
     def pregunta(self) -> str:
@@ -132,9 +165,37 @@ class MejorClasificacion(Trivia):
     deben haber participado el mismo anyo.
     """
     def __init__(self, parametros: OperacionesEurovision):
-        self._anyo = None
-        self._opciones_invalidas = None
-        self._respuesta = None
+        self._anyo = parametros.anyo_aleatorio(1)[0]
+        agregacion_ordenada = list(parametros.agregacion([
+                {"$match": {"anyo": self._anyo}},
+                {"$unwind": "$concursantes"},
+                {"$project": {
+                    "_id": 0,
+                    "resultado": "$concursantes.resultado",
+                    "respuesta": {"$concat": ["$concursantes.cancion", " / ", "$concursantes.pais"]}
+                }},
+                {"$sort": {"resultado": 1}}
+            ]))
+        self._respuesta = agregacion_ordenada[0]["respuesta"]
+
+        #igual pero sin ordenar para que las 3 opciones invalidas no sean las otras 3 mejores
+        agregacion_desordenada = list(parametros.agregacion([
+                {"$match": {"anyo": self._anyo}},
+                {"$unwind": "$concursantes"},
+                {"$project": {
+                    "_id": 0,
+                    "resultado": "$concursantes.resultado",
+                    "respuesta": {"$concat": ["$concursantes.cancion", " / ", "$concursantes.pais"]}
+                }}
+        ]))
+
+        self._opciones_invalidas = []
+        for i in agregacion_desordenada:
+            opcion = i["respuesta"]
+            if opcion != self.respuesta and opcion not in self._opciones_invalidas:
+                self._opciones_invalidas.append(opcion)
+            if len(self._opciones_invalidas) == 3:
+                break
 
     @property
     def pregunta(self) -> str:
@@ -160,10 +221,51 @@ class MejorMediaPuntos(Trivia):
     IMPORTANTE: la solucion debe ser unica.
     """
     def __init__(self, parametros: OperacionesEurovision):
-        self._anyo_inicial = None
-        self._anyo_final = None
-        self._opciones_invalidas = None
-        self._respuesta = None
+        aux = parametros.anyo_aleatorio(2)
+        if aux[0]<aux[1]:
+            self._anyo_inicial = aux[0]
+            self._anyo_final = aux[1]
+        else:
+            self._anyo_inicial = aux[1]
+            self._anyo_final = aux[0]
+
+        agregacion_ordenada = list(parametros.agregacion([
+            {"$match": {"anyo": {"$gte": self._anyo_inicial, "$lte": self._anyo_final}}},
+            {"$unwind": "$concursantes"},
+            {"$group": {
+                "_id": "$concursantes.pais",
+                "media_resultado": {"$avg": "$concursantes.resultado"}
+            }},
+            {"$project": {
+                "_id": 0,
+                "pais": "$_id",
+                "media_resultado": 1
+            }},
+            {"$sort": {"media_resultado": 1}}  # menor media = mejor
+            ]))
+        self._respuesta = agregacion_ordenada[0]["pais"]
+
+        agregacion_desordenada = list(parametros.agregacion([
+            {"$match": {"anyo": {"$gte": self._anyo_inicial, "$lte": self._anyo_final}}},
+            {"$unwind": "$concursantes"},
+            {"$group": {
+                "_id": "$concursantes.pais",
+                "media_resultado": {"$avg": "$concursantes.resultado"}
+            }},
+            {"$project": {
+                "_id": 0,
+                "pais": "$_id",
+                "media_resultado": 1
+            }}
+        ]))
+        self._opciones_invalidas = []
+        for fila in agregacion_desordenada:
+            opcion = fila["pais"]
+            if opcion != self._respuesta and opcion not in self._opciones_invalidas:
+                self._opciones_invalidas.append(opcion)
+            if len(self._opciones_invalidas) == 3:
+                break
+
 
     @property
     def pregunta(self) -> str:
