@@ -1,6 +1,8 @@
 """
 Módulo de Python que contiene las rutas
 """
+import datetime
+
 from flask import current_app as app, render_template, redirect, url_for, abort, request
 from .formularios import GenerarQuizForm
 from . import mongo
@@ -22,10 +24,17 @@ def mostrar_ediciones():
     elementos_por_pagina = 5
 
     # AQUI VA VUESTRO CODIGO
-    total_elementos = mongo.db["festivales"].count_documents({})
-    festivales = list(mongo.db["festivales"].find({},
-        {"anyo": 1, "ciudad": 1, "pais": 1, "fecha": 1, "concursantes": 1}
-    ).sort("anyo", -1).skip((pagina - 1) * elementos_por_pagina).limit(elementos_por_pagina))
+    total_elementos = (mongo.db["festivales"].count_documents({}))
+    festivales = list(mongo.db["festivales"].
+                      find({},
+                           {"anyo": 1,
+                            "ciudad": 1,
+                            "pais": 1,
+                            "fecha": 1,
+                            "concursantes": 1}).
+                      sort("anyo", -1).
+                      skip((pagina - 1) * elementos_por_pagina).
+                      limit(elementos_por_pagina))
 
     # Descomentad cuando cargueis la informacion
     paginacion = render_pagination(pagina, elementos_por_pagina, total_elementos, 'mostrar_ediciones')
@@ -164,6 +173,12 @@ def guardar_concurso():
     data = request.get_json()
 
     # AQUI VA VUESTRO CODIGO
+    for pregunta in data["preguntas"]:
+        if pregunta.get("seleccionado") is not None:
+            del pregunta["seleccionado"] #si el campo no es nulo borro
+
+    data["creacion"] = datetime.datetime.now() #le pongo fecha
+    mongo.db["quizzes"].insert_one(data)
 
     # En este caso, no hacemos un redirect directamente porque desde JS no se reconoce
     # bien. En su lugar, devolvemos la respuesta en un json
@@ -184,12 +199,21 @@ def mostrar_quizzes():
     # Numero de elementos por pagina
     elementos_por_pagina = 20
 
-    # Descomentad cuando cargueis la informacion
-    # paginacion = render_pagination(pagina, elementos_por_pagina, total_elementos, 'mostrar_quizzes')
+    total_elementos = mongo.db["quizzes"].count_documents({})
 
-    # return render_template("listar_quizzes.html", quizzes=quizzes,
-    #                        pagination=paginacion, pagina=pagina)
-    abort(404)
+    quizzes = (
+        mongo.db["quizzes"]
+        .find({})
+        .sort("creacion", -1)  # descendente
+        .skip((pagina - 1) * elementos_por_pagina)
+        .limit(elementos_por_pagina)
+    )
+
+    # Descomentad cuando cargueis la informacion
+    paginacion = render_pagination(pagina, elementos_por_pagina, total_elementos, 'mostrar_quizzes')
+
+    return render_template("listar_quizzes.html", quizzes=quizzes,
+                           pagination=paginacion, pagina=pagina)
 
 
 @app.route("/jugar/<nombre_quiz>")

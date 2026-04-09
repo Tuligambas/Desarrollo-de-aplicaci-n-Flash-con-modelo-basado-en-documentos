@@ -48,10 +48,19 @@ class PaisActuacion(TriviaVideo):
     ¿Que pais represento la cancion?
     """
     def __init__(self, parametros: OperacionesEurovision):
+        participacion_aleatoria = parametros.participacion_aleatoria(1)[0]
+        self._url = participacion_aleatoria["url_youtube"]
+        self._respuesta = participacion_aleatoria["pais"]
 
-        self._url = None
-        self._respuesta = None
-        self._opciones_invalidas = None
+        opciones = parametros.paises_participantes_aleatorios(50)
+        opciones_invalidas = []
+        for pais in opciones:
+            if pais != self._respuesta and pais not in opciones_invalidas:
+                opciones_invalidas.append(pais)
+            if len(opciones_invalidas) == 3:
+                break
+
+        self._opciones_invalidas = opciones_invalidas
 
     @property
     def url(self) -> str:
@@ -81,9 +90,29 @@ class NombreCancion(TriviaVideo):
     NOTA: para dificultar la respuesta, se deben seleccionar canciones del mismo pais.
     """
     def __init__(self, parametros: OperacionesEurovision):
-        self._url = None
-        self._opciones_invalidas = None
-        self._respuesta = None
+        participacion_aleatoria = parametros.participacion_aleatoria(1)[0]
+        self._url = participacion_aleatoria["url_youtube"]
+        self._respuesta = participacion_aleatoria["cancion"]
+        pais_participando = participacion_aleatoria["pais"]
+        canciones_pais = list(parametros.agregacion([
+            {"$unwind": "$concursantes"},
+            {"$match": {
+                "concursantes.pais": pais_participando}}, #me quedo solo con las participaciones del pais
+            {"$project":{
+                "_id":0,
+                "cancion": "$concursantes.cancion" #me quedo solo con sus canciones
+            }},
+            {"$group": {
+                "_id": "$concursantes.cancion" #para evitar repetidos
+            }}
+        ]))
+        opciones_invalidas = []
+        for cancion in canciones_pais:
+            if cancion != self._respuesta and cancion not in opciones_invalidas:
+                opciones_invalidas.append(cancion)
+            if len(opciones_invalidas) == 3:
+                break
+        self._opciones_invalidas = opciones_invalidas
 
     @property
     def url(self) -> str:
@@ -113,9 +142,31 @@ class InterpreteCancion(TriviaVideo):
     NOTA: para dificultar la respuesta, se deben seleccionar interpretes del mismo pais.
     """
     def __init__(self, parametros: OperacionesEurovision):
-        self._url = None
-        self._opciones_invalidas = None
-        self._respuesta = None
+        participacion_aleatoria = parametros.participacion_aleatoria(1)[0]
+        self._url = participacion_aleatoria["url_youtube"]
+        self._respuesta = participacion_aleatoria["artista"]
+
+        pais_participando = participacion_aleatoria["pais"]
+        artistas_pais = list(parametros.agregacion([
+            {"$unwind": "$concursantes"},
+            {"$match": {
+                "concursantes.pais": pais_participando}},  # me quedo solo con las participaciones del pais
+            {"$project": {
+                "_id": 0,
+                "artista": "$concursantes.artista"  # me quedo solo con sus artistas
+            }},
+            {"$group": {
+                "_id": "$concursantes.artista"  #para evitar repetidos
+            }}
+        ]))
+
+        opciones_invalidas = []
+        for artista in artistas_pais:
+            if artista != self._respuesta and artista not in opciones_invalidas:
+                opciones_invalidas.append(artista)
+            if len(opciones_invalidas) == 3:
+                break
+        self._opciones_invalidas = opciones_invalidas
 
     @property
     def url(self) -> str:
