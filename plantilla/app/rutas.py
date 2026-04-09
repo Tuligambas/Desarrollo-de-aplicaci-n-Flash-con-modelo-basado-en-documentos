@@ -222,4 +222,6 @@ def jugar_quiz_personalizado(nombre_quiz: str):
     # Primero, hay que comprobar un quiz con ese nombre en la coleccion
     # "quizzes". En tal caso, cargamos toda la informacion y renderizamos "juego.html".
     # Si no es asi, lanzamos un error 404.
-    abort(404)
+    quiz = mongo.db["quizzes"].find_one_or_404({"_id": nombre_quiz})
+    render_template("juego.html",preguntas=quiz, guardable = False)
+
