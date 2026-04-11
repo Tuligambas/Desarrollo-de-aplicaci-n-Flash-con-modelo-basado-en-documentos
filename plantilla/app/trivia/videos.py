@@ -103,13 +103,14 @@ class NombreCancion(TriviaVideo):
                 "cancion": "$concursantes.cancion" #me quedo solo con sus canciones
             }},
             {"$group": {
-                "_id": "$concursantes.cancion" #para evitar repetidos
+                "_id": "$cancion" #para evitar repetidos
             }}
         ]))
         opciones_invalidas = []
         for cancion in canciones_pais:
-            if cancion != self._respuesta and cancion not in opciones_invalidas:
-                opciones_invalidas.append(cancion)
+            titulo = cancion["_id"]
+            if titulo != self._respuesta and titulo not in opciones_invalidas:
+                opciones_invalidas.append(titulo)
             if len(opciones_invalidas) == 3:
                 break
         self._opciones_invalidas = opciones_invalidas
@@ -141,6 +142,7 @@ class InterpreteCancion(TriviaVideo):
 
     NOTA: para dificultar la respuesta, se deben seleccionar interpretes del mismo pais.
     """
+
     def __init__(self, parametros: OperacionesEurovision):
         participacion_aleatoria = parametros.participacion_aleatoria(1)[0]
         self._url = participacion_aleatoria["url_youtube"]
@@ -156,14 +158,15 @@ class InterpreteCancion(TriviaVideo):
                 "artista": "$concursantes.artista"  # me quedo solo con sus artistas
             }},
             {"$group": {
-                "_id": "$concursantes.artista"  #para evitar repetidos
+                "_id": "$artista"  # para evitar repetidos
             }}
         ]))
 
         opciones_invalidas = []
         for artista in artistas_pais:
-            if artista != self._respuesta and artista not in opciones_invalidas:
-                opciones_invalidas.append(artista)
+            nombre = artista["_id"]
+            if nombre != self._respuesta and nombre not in opciones_invalidas:
+                opciones_invalidas.append(nombre)
             if len(opciones_invalidas) == 3:
                 break
         self._opciones_invalidas = opciones_invalidas

@@ -120,16 +120,17 @@ class CancionPais(Trivia):
 
     def __init__(self, parametros: OperacionesEurovision):
         # Obtenemos una participacion para la respuesta
-        participacion_aleatoria = parametros.paises_participantes_aleatorios(1)[0]
+        participacion_aleatoria = parametros.participacion_aleatoria(1)[0]
         self._respuesta = participacion_aleatoria["pais"]
         self._cancion = participacion_aleatoria["cancion"]
 
-        #saco posibles paises y aplico la misma logica que antes
-        opciones = parametros.paises_participantes_aleatorios(50)
+        # saco posibles paises y aplico la misma logica que antes
+        opciones = parametros.participacion_aleatoria(50)
         opciones_invalidas = []
         for pais in opciones:
-            if pais != self._respuesta and pais not in opciones_invalidas:
-                opciones_invalidas.append(pais)
+            pais_participante = pais["pais"]
+            if pais_participante != self._respuesta and pais_participante not in opciones_invalidas:
+                opciones_invalidas.append(pais_participante)
             if len(opciones_invalidas) == 3:
                 break
 

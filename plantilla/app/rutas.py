@@ -69,7 +69,7 @@ def jugar_quiz():
     anyos = request.args.getlist("anyos", type=int)
     paises = request.args.getlist("paises")
     nombre = request.args.get("nombre", None)
-    num_preguntas = 1
+    num_preguntas = 2
 
     preguntas_aleatorias = generar_n_preguntas_aleatoriamente(num_preguntas, anyos, paises, mongo.db["festivales"])
 
@@ -201,7 +201,7 @@ def mostrar_quizzes():
 
     total_elementos = mongo.db["quizzes"].count_documents({})
 
-    quizzes = (
+    quizzes = list(
         mongo.db["quizzes"]
         .find({})
         .sort("creacion", -1)  # descendente
@@ -223,5 +223,4 @@ def jugar_quiz_personalizado(nombre_quiz: str):
     # "quizzes". En tal caso, cargamos toda la informacion y renderizamos "juego.html".
     # Si no es asi, lanzamos un error 404.
     quiz = mongo.db["quizzes"].find_one_or_404({"_id": nombre_quiz})
-    render_template("juego.html",preguntas=quiz, guardable = False)
-
+    return render_template("juego.html", preguntas=quiz, guardable=False)
