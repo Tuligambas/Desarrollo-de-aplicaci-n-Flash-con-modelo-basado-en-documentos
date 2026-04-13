@@ -1,0 +1,6 @@
+En esta práctica yo pondría índices sobre los campos que más se usan en las consultas de las rutas.
+En festivales, pondría un índice en año porque en la web se usa para ordenar las ediciones de más nueva a más antigua y también para buscar una edición concreta por año. Así se acelera tanto el sort como el find por año.
+
+En quizzes, dejaría el índice de id, porque se usa para cargar un quiz por nombre, y añadiría uno en creacion para que el listado de quizzes ordenado por fecha vaya más rápido.
+
+Como parte negativa, cuantos más índices pongamos, más espacio ocupan y algo más lentas son las inserciones y actualizaciones, pero en este caso compensa porque en la app se hacen muchas lecturas y listados.
